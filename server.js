@@ -881,3 +881,5 @@ app.use((req, res) => {
 app.listen(port, host, () => {
   console.log(`VaultAI server running on http://${host}:${port}`);
 });
+
+export default app;
