@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VaultAI — Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<header class="appnav">
+  <a class="brand" href="/"><span class="mark">V</span> VaultAI <span class="pill" id="rolePill">Employee</span></a>
+  <div class="row">
+    <span id="userLabel" style="font-size:12px;color:var(--muted)"></span>
+    <button class="btn secondary small" onclick="signOut()">Sign out</button>
+  </div>
+</header>
+
+<div class="appmain">
+  <aside class="sidebar" id="sidebar">
+    <button class="active" data-page="overview">▦ Overview</button>
+    <button data-page="chat">✦ AI Chat</button>
+    <button data-page="documents">▤ Documents</button>
+    <button data-page="sources">⌘ Sources</button>
+    <button data-page="settings">⚙ Settings</button>
+    <button data-page="account">♙ Account</button>
+  </aside>
+
+  <main class="content">
+    
+    <!-- Overview Section -->
+    <section class="dashboard-section active" id="overview-section">
+      <h1>Workspace Overview</h1>
+      <p class="sub">A snapshot of activity in <span id="overview-company-name"></span>.</p>
+      
+      <div class="stats">
+        <div class="stat"><span>Documents</span><strong id="stat-docs">0</strong></div>
+        <div class="stat"><span>Chat messages</span><strong id="stat-msgs">0</strong></div>
+        <div class="stat"><span>Active Sources</span><strong id="stat-sources">0</strong></div>
+      </div>
+      
+      <div class="appcard">
+        <h3>Quick Actions</h3>
+        <div class="row">
+          <div>
+            <b>1. Upload a document</b>
+            <div class="empty">Add PDFs or text files to your secure workspace.</div>
+          </div>
+          <button class="btn secondary small" onclick="render('documents')">Go to Documents</button>
+        </div>
+        <hr style="border:0;border-top:1px solid var(--line);margin:17px 0">
+        <div class="row">
+          <div>
+            <b>2. Start a conversation</b>
+            <div class="empty">Ask questions about your uploaded documents.</div>
+          </div>
+          <button class="btn primary small" onclick="render('chat')">Open AI Chat</button>
+        </div>
+      </div>
+      
+      <div class="appcard">
+        <h3>Recent Conversations</h3>
+        <p class="empty">No recent conversations yet. (Demo data)</p>
+      </div>
+
+      <!-- Gemini AI Connection Test Card -->
+      <div class="appcard" id="ai-test-panel" style="margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <h3 style="margin:0;font-size:16px;">Google Gemini Connection Test</h3>
+            <p class="sub" style="margin:2px 0 0;font-size:12px;">Verify server-side communication with Gemini API using the configured secret key.</p>
+          </div>
+          <span class="pill" id="ai-test-status" style="color:var(--muted);background:#ffffff10;">Ready</span>
+        </div>
+        
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+          <input type="text" id="ai-test-prompt" value="Reply with exactly: VaultAI Gemini connected successfully." style="flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#fff;font-size:13px;" placeholder="Enter a prompt to test Gemini...">
+          <button class="btn primary" id="ai-test-btn" onclick="runAiTest()">Test Gemini</button>
+        </div>
+
+        <div id="ai-test-loading" style="display:none;color:var(--mint);font-size:12px;margin-bottom:8px;">
+          ⏳ Sending request to server-side endpoint (/api/ai-test)...
+        </div>
+
+        <div id="ai-test-result" style="display:none;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.5;"></div>
+      </div>
+    </section>
+
+    <!-- AI Chat Section -->
+    <section class="dashboard-section" id="chat-section">
+      <div class="chat-layout">
+        <!-- Sidebar for chat history -->
+        <div class="chat-sidebar">
+          <button class="btn secondary" style="width:100%" onclick="newChat()">+ New Chat</button>
+          <div class="chat-history" id="chatHistory">
+            <!-- Mock history item -->
+            <div class="chat-history-item active">Current Conversation</div>
+          </div>
+        </div>
+
+        <!-- Main chat area -->
+        <div class="chat-main">
+          <h1>AI Chat</h1>
+          <p class="sub">Ask questions grounded in your company's documents.</p>
+
+          <div class="suggested-questions">
+            <button onclick="fillChat('Summarize this document.')">Summarize this document.</button>
+            <button onclick="fillChat('What are the key findings?')">What are the key findings?</button>
+            <button onclick="fillChat('Find the relevant policy.')">Find the relevant policy.</button>
+            <button onclick="fillChat('Compare the main differences.')">Compare the main differences.</button>
+            <button onclick="fillChat('Which document supports this answer?')">Which document supports this answer?</button>
+          </div>
+
+          <div class="appcard" style="display:flex;flex-direction:column;flex:1;min-height:300px;">
+            <div class="messages" id="messages">
+              <div class="msg">Hi! I’m your VaultAI workspace assistant. I can answer questions based on the documents uploaded to this workspace. How can I help?</div>
+            </div>
+            
+            <div class="typing-buddy" id="typingBuddy" role="status" aria-live="polite" hidden>
+              <svg class="typing-buddy-face" viewBox="0 0 64 48" aria-hidden="true" focusable="false">
+                <defs><linearGradient id="typingBuddyGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#285f66"/><stop offset="100%" stop-color="#4c467e"/></linearGradient></defs>
+                <ellipse class="typing-buddy-ear" cx="6.5" cy="25" rx="5" ry="8"/>
+                <ellipse class="typing-buddy-ear" cx="57.5" cy="25" rx="5" ry="8"/>
+                <rect class="typing-buddy-shell" x="10" y="4" width="44" height="40" rx="18"/>
+                <circle class="typing-buddy-eye" cx="24" cy="20" r="4"/>
+                <circle class="typing-buddy-eye-glint" cx="22.6" cy="18.7" r="1.1"/>
+                <circle class="typing-buddy-eye" cx="40" cy="20" r="4"/>
+                <circle class="typing-buddy-eye-glint" cx="38.6" cy="18.7" r="1.1"/>
+                <path class="typing-buddy-smile" d="M24 29 Q32 36 40 29"/>
+              </svg>
+              <span>Analyzing documents...</span>
+            </div>
+            
+            <form class="chatform" id="chatForm">
+              <button class="chat-attach" id="chatAttachButton" type="button" aria-label="Attach documents" title="Upload a document for context">+</button>
+              <input id="chatFileInput" type="file" accept=".txt,.pdf,.docx" multiple hidden>
+              <input id="chatInput" placeholder="Ask about your company documents…" required>
+              <button class="btn primary">Send</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Documents Section -->
+    <section class="dashboard-section" id="documents-section">
+      <h1>Documents</h1>
+      <p class="sub">Manage the files available for AI retrieval in this workspace.</p>
+      
+      <div class="appcard">
+        <h3>Upload Document</h3>
+        <div class="uploadarea" id="drop-zone" onclick="document.getElementById('fileInput').click()">
+          ▤<br>
+          <b>Drag & Drop files here or click to browse</b><br>
+          <small>Supported formats: PDF, TXT, DOCX. Max size: 20MB.</small>
+          <input id="fileInput" type="file" accept=".txt,.pdf,.docx" multiple>
+        </div>
+      </div>
+      
+      <div class="appcard tablewrap">
+        <div class="row">
+          <h3>Workspace Library</h3>
+          <div class="row">
+            <input type="text" placeholder="Search documents..." style="background:#0b1425;border:1px solid #354660;border-radius:6px;padding:6px 12px;color:white;font-size:12px;">
+            <button class="btn secondary small">Filter</button>
+          </div>
+        </div>
+        
+        <table class="table" id="docs-table">
+          <thead>
+            <tr>
+              <th>File name</th>
+              <th>Type</th>
+              <th>Uploaded</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="docs-list">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+        <p class="empty" id="no-docs-msg">No documents listed yet. (Uploads are simulated in this demo)</p>
+      </div>
+    </section>
+
+    <!-- Sources Section -->
+    <section class="dashboard-section" id="sources-section">
+      <h1>Sources & Knowledge</h1>
+      <p class="sub">Inspect how documents are processed into knowledge chunks.</p>
+      
+      <div class="appcard">
+        <p class="empty">This section will allow you to explore the extracted text chunks, metadata, and vectors generated by the backend pipeline. <br><br>Features to come:<br>- Vector search testing<br>- Chunk editing<br>- Integration with Supabase pgvector</p>
+      </div>
+    </section>
+
+    <!-- Settings Section -->
+    <section class="dashboard-section" id="settings-section">
+      <h1>Settings</h1>
+      <p class="sub">Manage workspace preferences.</p>
+      
+      <div class="appcard">
+        <h3>Workspace Details</h3>
+        <form onsubmit="event.preventDefault(); toast('Settings saved. (Demo mode)');">
+          <label class="field">
+            <span>Workspace Name</span>
+            <input type="text" id="setting-workspace-name">
+          </label>
+          <label class="field">
+            <span>AI Model Preference</span>
+            <select>
+              <option>Gemini 1.5 Pro</option>
+              <option>Gemini 1.5 Flash</option>
+            </select>
+          </label>
+          <button class="btn primary">Save Changes</button>
+        </form>
+      </div>
+
+      <div class="appcard" style="border-color:#ff4a4a44;">
+        <h3 style="color:#ff6b6b;">Danger Zone</h3>
+        <p class="empty">Permanently delete this workspace and all its data.</p>
+        <button class="btn" style="background:#ff4a4a22;color:#ff6b6b;border:1px solid #ff4a4a44;" onclick="alert('Demo mode: Cannot delete workspace.')">Delete Workspace</button>
+      </div>
+    </section>
+
+    <!-- Account Section -->
+    <section class="dashboard-section" id="account-section">
+      <h1>Account Details</h1>
+      <p class="sub">Manage your personal profile and sessions.</p>
+      
+      <div class="appcard">
+        <h3>Profile</h3>
+        <label class="field">
+          <span>Email</span>
+          <input type="email" id="account-email" disabled>
+        </label>
+        <label class="field">
+          <span>Role</span>
+          <input type="text" id="account-role" disabled>
+        </label>
+      </div>
+      
+      <div class="appcard">
+        <h3>Password Management</h3>
+        <form onsubmit="event.preventDefault(); toast('Password update requested. (Demo mode)');">
+          <label class="field">
+            <span>Current Password</span>
+            <input type="password" required>
+          </label>
+          <label class="field">
+            <span>New Password</span>
+            <input type="password" required>
+          </label>
+          <button class="btn secondary">Update Password</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<!-- Extracted Text Viewer Modal -->
+<div id="textModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#13151b;border:1px solid #282d37;border-radius:12px;width:100%;max-width:760px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 48px rgba(0,0,0,0.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #282d37;background:#181b22;">
+      <div>
+        <h3 id="textModalTitle" style="margin:0;font-size:15px;color:#fff;font-weight:600;">Extracted Document Text</h3>
+        <p id="textModalSubtitle" style="margin:2px 0 0;font-size:12px;color:var(--muted);">Stored securely in PostgreSQL database</p>
+      </div>
+      <button class="btn secondary small" onclick="closeTextModal()">✕ Close</button>
+    </div>
+    <div id="textModalBody" style="padding:20px;overflow-y:auto;white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;color:#c9d1d9;line-height:1.65;background:#0d1117;flex:1;">
+      Loading text...
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid #282d37;background:#181b22;font-size:12px;color:var(--muted);">
+      <span id="textModalMeta"></span>
+      <button class="btn secondary small" onclick="copyExtractedText()">Copy Text</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // State
+  const state = {
+    selectedDocs: []
+  };
+
+  let supabaseClient = null;
+  let currentUser = null;
+
+  async function fetchDocuments() {
+    if (!supabaseClient) return;
+    try {
+      // Query documents and chunk count
+      let data = null;
+      const res = await supabaseClient
+        .from('documents')
+        .select('id, file_name, status, content, created_at, document_chunks(count)')
+        .order('created_at', { ascending: false });
+
+      if (res.error) {
+        // Fallback without join in case RLS or constraint prevents sub-select
+        const fallbackRes = await supabaseClient
+          .from('documents')
+          .select('id, file_name, status, content, created_at')
+          .order('created_at', { ascending: false });
+        if (fallbackRes.error) {
+          console.error("Error fetching documents:", fallbackRes.error);
+          return;
+        }
+        data = fallbackRes.data;
+      } else {
+        data = res.data;
+      }
+      
+      state.selectedDocs = (data || []).map(d => {
+        const hasContent = Boolean(d.content && d.content.trim().length > 0);
+        const isExtractedStatus = ['extracted', 'completed', 'processed', 'ready'].includes(d.status);
+        const chunkCount = (d.document_chunks && d.document_chunks[0] && typeof d.document_chunks[0].count === 'number')
+          ? d.document_chunks[0].count
+          : 0;
+        return {
+          id: d.id,
+          name: d.file_name,
+          type: (d.file_name || '').split('.').pop().toUpperCase(),
+          date: d.created_at ? new Date(d.created_at).toLocaleDateString() : new Date().toLocaleDateString(),
+          status: d.status || 'uploaded',
+          hasText: hasContent || isExtractedStatus,
+          chunkCount: chunkCount
+        };
+      });
+      renderDocs();
+    } catch (e) {
+      console.error("fetchDocuments error:", e);
+    }
+  }
+
+  // Initialization
+  async function init() {
+    try {
+      const res = await fetch('/api/config');
+      const config = await res.json();
+      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+        throw new Error("Missing config");
+      }
+      supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+      
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      
+      if (error || !session) {
+        window.location.href = '/auth.html';
+        return;
+      }
+
+      currentUser = session.user;
+      
+      const email = currentUser.email;
+      const role = currentUser.user_metadata?.role || "Employee";
+      const company = currentUser.user_metadata?.company || "My Workspace";
+
+      document.getElementById('userLabel').textContent = email;
+      document.getElementById('rolePill').textContent = role;
+      document.getElementById('overview-company-name').textContent = company;
+      document.getElementById('setting-workspace-name').value = company;
+      document.getElementById('account-email').value = email;
+      document.getElementById('account-role').value = role;
+
+      // Listen for auth state changes (e.g. logout in another tab)
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT') {
+          window.location.href = '/auth.html';
+        }
+      });
+      
+      // Load documents from DB
+      await fetchDocuments();
+    } catch (err) {
+      console.error("Dashboard auth check failed:", err);
+      window.location.href = '/auth.html';
+    }
+  }
+
+  // Navigation
+  function render(page) {
+    document.querySelectorAll('.sidebar button').forEach(b => {
+      b.classList.toggle('active', b.dataset.page === page);
+    });
+    document.querySelectorAll('.dashboard-section').forEach(s => {
+      s.classList.remove('active');
+    });
+    document.getElementById(`${page}-section`).classList.add('active');
+  }
+
+  document.getElementById('sidebar').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-page]');
+    if (btn) render(btn.dataset.page);
+  });
+
+  async function signOut() {
+    if (supabaseClient) {
+      await supabaseClient.auth.signOut();
+    }
+    window.location.href = '/auth.html';
+  }
+
+  // Toast with debounce and visual re-trigger
+  let toastTimer = null;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    if (toastTimer) {
+      clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+    t.textContent = msg;
+    t.classList.remove('show');
+    void t.offsetWidth; // Trigger DOM reflow so CSS animation re-runs
+    t.classList.add('show');
+    toastTimer = setTimeout(() => {
+      t.classList.remove('show');
+      toastTimer = null;
+    }, 4500);
+  }
+
+  // Documents Logic
+  const fileInput = document.getElementById('fileInput');
+  const chatFileInput = document.getElementById('chatFileInput');
+  const docsList = document.getElementById('docs-list');
+  const noDocsMsg = document.getElementById('no-docs-msg');
+  const docsTable = document.getElementById('docs-table');
+
+  async function handleFiles(files) {
+    if (!files.length) return;
+    
+    // Check auth session for token
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      toast("Not authenticated.");
+      return;
+    }
+
+    const file = files[0]; // MVP: process one file at a time
+    const allowed = /\.(?:pdf)$/i; 
+    
+    if(!allowed.test(file.name)) {
+      toast("Invalid file type. Only PDF is supported for the MVP.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast("File too large. Maximum size is 10 MB.");
+      return;
+    }
+    
+    // Optimistic UI
+    const docObj = {
+      name: file.name,
+      type: file.name.split('.').pop().toUpperCase(),
+      date: new Date().toLocaleDateString(),
+      status: 'Uploading...'
+    };
+    const docIndex = state.selectedDocs.unshift(docObj) - 1; // prepend
+    renderDocs();
+    toast(`Uploading and processing ${file.name} (extracting text & generating AI embeddings)...`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: formData
+      });
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Upload failed");
+      }
+      
+      if (result.chunksCreated > 0) {
+        toast(`Ready! Extracted & generated ${result.chunksCreated} searchable chunks with embeddings.`);
+      } else {
+        toast(result.message || `Successfully processed ${file.name}`);
+      }
+      // Refresh real data from DB to ensure backend confirmed insertion
+      await fetchDocuments();
+    } catch (err) {
+      // Remove optimistic ui on fail and show error
+      state.selectedDocs.shift(); 
+      toast(`Error: ${err.message}`);
+      renderDocs();
+    }
+  }
+
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+  chatFileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+  // Drag and drop
+  const dropZone = document.getElementById('drop-zone');
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  async function removeDoc(index) {
+    const doc = state.selectedDocs[index];
+    if (!doc) return;
+    
+    // If persisted in database, delete via Supabase RLS
+    if (doc.id && supabaseClient) {
+      if (!confirm(`Are you sure you want to remove "${doc.name}" from your workspace?`)) {
+        return;
+      }
+      try {
+        const { error } = await supabaseClient
+          .from('documents')
+          .delete()
+          .eq('id', doc.id);
+          
+        if (error) {
+          toast(`Failed to remove document: ${error.message}`);
+          return;
+        }
+        toast(`Removed "${doc.name}" successfully.`);
+        await fetchDocuments();
+        return;
+      } catch (err) {
+        toast(`Error removing document: ${err.message}`);
+        return;
+      }
+    }
+    
+    state.selectedDocs.splice(index, 1);
+    renderDocs();
+  }
+
+  const processingDocIds = new Set();
+
+  function renderDocs() {
+    if (state.selectedDocs.length === 0) {
+      docsTable.style.display = 'none';
+      noDocsMsg.style.display = 'block';
+    } else {
+      docsTable.style.display = 'table';
+      noDocsMsg.style.display = 'none';
+      
+      docsList.innerHTML = state.selectedDocs.map((d, i) => {
+        const isProcessing = processingDocIds.has(d.id) || d.status === 'processing';
+        const hasText = Boolean(d.hasText);
+        
+        let pillColor = 'var(--muted)';
+        if (hasText || d.status === 'extracted' || d.status === 'completed' || d.status === 'processed') {
+          pillColor = 'var(--mint)';
+        } else if (d.status === 'ocr_required' || d.status === 'error' || d.status === 'file_too_large') {
+          pillColor = '#ff6b6b';
+        } else if (isProcessing) {
+          pillColor = '#f6ad55';
+        }
+
+        return `
+        <tr>
+          <td>
+            ▤ ${escapeHtml(d.name)}
+            ${d.chunkCount > 0 ? `<span class="pill" style="color:var(--mint);background:#ffffff10;margin-left:6px;font-size:11px;">${d.chunkCount} chunks ready</span>` : ''}
+          </td>
+          <td>${escapeHtml(d.type)}</td>
+          <td>${escapeHtml(d.date)}</td>
+          <td><span class="pill" style="color:${pillColor};background:#ffffff14;">${escapeHtml(d.status || 'uploaded')}</span></td>
+          <td>
+            ${d.id ? `
+              <button class="btn primary small" style="margin-right: 6px;" onclick="reprocessDoc('${d.id}')" ${isProcessing ? 'disabled' : ''}>
+                ${isProcessing ? 'Processing...' : (d.chunkCount > 0 ? 'Re-index' : 'Process & Embed')}
+              </button>
+              ${hasText ? `<button class="btn secondary small" style="margin-right: 6px;" onclick="viewExtractedText('${d.id}')" ${isProcessing ? 'disabled' : ''}>View Text</button>` : ''}
+              ${d.chunkCount > 0 ? `<button class="btn secondary small" style="margin-right: 6px;" onclick="viewChunks('${d.id}')" ${isProcessing ? 'disabled' : ''}>View Chunks</button>` : ''}
+            ` : ''}
+            <button class="btn secondary small" onclick="removeDoc(${i})" ${isProcessing ? 'disabled' : ''}>Remove</button>
+          </td>
+        </tr>
+      `;
+      }).join('');
+    }
+  }
+
+  async function reprocessDoc(docId) {
+    if (!supabaseClient) return;
+    if (processingDocIds.has(docId)) {
+      toast("Processing already in progress for this document.");
+      return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      toast("Not authenticated.");
+      return;
+    }
+
+    processingDocIds.add(docId);
+    const doc = state.selectedDocs.find(d => d.id === docId);
+    if (doc) doc.status = 'processing';
+    renderDocs();
+    toast("Extracting text and generating AI vector embeddings...");
+
+    try {
+      const res = await fetch(`/api/documents/${docId}/reprocess`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Processing failed");
+      }
+      toast(`Success! Saved ${data.totalChunks} chunks with embeddings.`);
+      await fetchDocuments();
+    } catch (err) {
+      toast(`Processing failed: ${err.message}`);
+      await fetchDocuments();
+    } finally {
+      processingDocIds.delete(docId);
+      renderDocs();
+    }
+  }
+
+  async function extractText(docId) {
+    if (!supabaseClient) return;
+    if (processingDocIds.has(docId)) {
+      toast("Extraction already in progress for this document.");
+      return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      toast("Not authenticated.");
+      return;
+    }
+
+    processingDocIds.add(docId);
+    
+    const doc = state.selectedDocs.find(d => d.id === docId);
+    if (doc) {
+      doc.status = 'processing';
+    }
+    renderDocs();
+    toast("Processing PDF text extraction...");
+
+    try {
+      const res = await fetch(`/api/documents/${docId}/extract`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to extract text");
+      }
+      
+      if (data.status === 'ocr_required') {
+        toast("Scanned PDF detected: OCR required (no text found).");
+      } else {
+        const charCount = typeof data.textLength === 'number' ? data.textLength : (data.preview ? data.preview.length : 0);
+        toast(`Extracted ${charCount.toLocaleString()} characters successfully!`);
+      }
+      await fetchDocuments();
+    } catch (err) {
+      toast(`Extraction failed: ${err.message}`);
+      await fetchDocuments();
+    } finally {
+      processingDocIds.delete(docId);
+      renderDocs();
+    }
+  }
+
+  async function viewExtractedText(docId) {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      toast("Not authenticated.");
+      return;
+    }
+
+    const modal = document.getElementById('textModal');
+    const modalBody = document.getElementById('textModalBody');
+    const modalTitle = document.getElementById('textModalTitle');
+    const modalMeta = document.getElementById('textModalMeta');
+    
+    modal.style.display = 'flex';
+    modalBody.textContent = 'Fetching extracted text from secure database...';
+    modalMeta.textContent = '';
+
+    try {
+      const res = await fetch(`/api/documents/${docId}/text`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch text");
+      }
+      modalTitle.textContent = `Extracted Text — ${data.fileName}`;
+      modalBody.textContent = data.content || '(No text stored in database)';
+      modalMeta.textContent = `Total length: ${data.textLength.toLocaleString()} characters`;
+    } catch (err) {
+      modalBody.textContent = `Error loading text: ${err.message}`;
+    }
+  }
+
+  function closeTextModal() {
+    document.getElementById('textModal').style.display = 'none';
+  }
+
+  function copyExtractedText() {
+    const text = document.getElementById('textModalBody').textContent;
+    if (text) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast("Copied extracted text to clipboard!");
+      }).catch(() => {
+        toast("Failed to copy to clipboard.");
+      });
+    }
+  }
+
+  async function chunkDocument(docId) {
+    if (!supabaseClient) return;
+    if (processingDocIds.has(docId)) {
+      toast("Processing already in progress for this document.");
+      return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      toast("Not authenticated.");
+      return;
+    }
+
+    processingDocIds.add(docId);
+    renderDocs();
+    toast("Splitting document into passages (~1,000 chars, 150 overlap)...");
+
+    try {
+      const res = await fetch(`/api/documents/${docId}/chunk`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Chunking failed");
+      }
+
+      toast(`Chunking complete! Saved ${data.totalChunks} chunks in database.`);
+      await fetchDocuments();
+    } catch (err) {
+      toast(`Chunking failed: ${err.message}`);
+      await fetchDocuments();
+    } finally {
+      processingDocIds.delete(docId);
+      renderDocs();
+    }
+  }
+
+  async function viewChunks(docId) {
+    if (!supabaseClient) return;
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) {
+      toast("Not authenticated.");
+      return;
+    }
+
+    const modal = document.getElementById('textModal');
+    const modalBody = document.getElementById('textModalBody');
+    const modalTitle = document.getElementById('textModalTitle');
+    const modalMeta = document.getElementById('textModalMeta');
+    
+    modal.style.display = 'flex';
+    modalBody.textContent = 'Fetching document passages from secure database...';
+    modalMeta.textContent = '';
+
+    try {
+      const res = await fetch(`/api/documents/${docId}/chunks`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch chunks");
+      }
+      modalTitle.textContent = `Document Passages — ${data.fileName}`;
+      if (!data.chunks || data.chunks.length === 0) {
+        modalBody.textContent = '(No chunks found for this document yet. Click "Chunk Text" to process.)';
+        modalMeta.textContent = '0 chunks stored';
+      } else {
+        modalBody.innerHTML = data.chunks.map((c, idx) => `
+          <div style="margin-bottom:16px;padding:12px;background:#161b22;border:1px solid #30363d;border-radius:6px;">
+            <div style="font-weight:600;color:var(--mint);margin-bottom:6px;display:flex;justify-content:space-between;">
+              <span>Passage #${c.chunk_index + 1}</span>
+              <span style="font-size:11px;color:var(--muted);">${(c.content || '').length} characters</span>
+            </div>
+            <div style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;color:#c9d1d9;line-height:1.6;">${escapeHtml(c.content)}</div>
+          </div>
+        `).join('');
+        modalMeta.textContent = `Total: ${data.totalChunks} ordered passages stored in public.document_chunks`;
+      }
+    } catch (err) {
+      modalBody.textContent = `Error loading passages: ${err.message}`;
+    }
+  }
+
+  // Chat Logic
+  function fillChat(text) {
+    document.getElementById('chatInput').value = text;
+    document.getElementById('chatInput').focus();
+  }
+
+  document.getElementById('chatAttachButton').addEventListener('click', () => {
+    chatFileInput.click();
+  });
+
+  const chatInput = document.getElementById('chatInput');
+  const typingBuddy = document.getElementById('typingBuddy');
+  
+  chatInput.addEventListener('input', () => {
+    typingBuddy.hidden = !chatInput.value.trim();
+  });
+
+  function escapeHtml(unsafe) {
+    return (unsafe||"").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  document.getElementById('chatForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = chatInput.value.trim();
+    if (!q) return;
+    
+    // Add User Message
+    addMessage('user', q);
+    chatInput.value = '';
+    typingBuddy.hidden = false;
+    
+    const loadingMsg = addMessage('ai', '<span style="color:var(--muted);">Thinking and searching workspace documents...</span>');
+
+    try {
+      if (!supabaseClient) throw new Error("Supabase client not initialized.");
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) throw new Error("Authentication session required.");
+
+      const res = await fetch('/api/chat/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ question: q })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Question answering failed.");
+      }
+
+      let html = `<div style="line-height:1.6;color:#e6edf3;">${escapeHtml(data.answer).replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}</div>`;
+
+      if (data.citations && data.citations.length > 0) {
+        html += `
+          <div style="margin-top:12px;padding:10px 12px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:12px;">
+            <div style="font-weight:600;color:var(--mint);margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+              <span>Sources (${data.sourcesCount})</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              ${data.citations.map(c => `
+                <div style="color:var(--muted);display:flex;justify-content:space-between;align-items:center;font-size:11.5px;">
+                  <span>▤ <strong style="color:#fff;">${escapeHtml(c.fileName)}</strong> — ${c.pageNumber ? `Page ${c.pageNumber}` : `Passage #${c.passageNumber}`}</span>
+                  <span style="color:var(--mint);">${Math.round(c.similarity * 100)}% match</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      loadingMsg.innerHTML = html;
+    } catch (err) {
+      loadingMsg.innerHTML = `<span style="color:#ff6b6b;"><strong>Error:</strong> ${escapeHtml(err.message)}</span>`;
+    } finally {
+      typingBuddy.hidden = true;
+      const msgs = document.getElementById('messages');
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  });
+
+  function addMessage(who, text) {
+    const msgs = document.getElementById('messages');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `msg ${who === 'user' ? 'user' : ''}`;
+    msgDiv.innerHTML = who === 'user' ? escapeHtml(text) : text;
+    msgs.appendChild(msgDiv);
+    msgs.scrollTop = msgs.scrollHeight;
+    return msgDiv;
+  }
+
+  function newChat() {
+    document.getElementById('messages').innerHTML = `<div class="msg">Hi! I’m your VaultAI workspace assistant. This interface is currently a frontend prototype.</div>`;
+    toast("Reset conversation prototype.");
+  }
+
+  async function runAiTest() {
+    const promptInput = document.getElementById('ai-test-prompt');
+    const prompt = (promptInput?.value || '').trim();
+    if (!prompt) {
+      toast('Please enter a test prompt.');
+      return;
+    }
+
+    const btn = document.getElementById('ai-test-btn');
+    const loading = document.getElementById('ai-test-loading');
+    const resultBox = document.getElementById('ai-test-result');
+    const statusPill = document.getElementById('ai-test-status');
+
+    btn.disabled = true;
+    loading.style.display = 'block';
+    resultBox.style.display = 'none';
+    statusPill.textContent = 'Testing...';
+    statusPill.style.color = '#f6ad55';
+
+    try {
+      const res = await fetch('/api/ai-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Server error testing Gemini connection.');
+      }
+
+      statusPill.textContent = 'Connected';
+      statusPill.style.color = 'var(--mint)';
+      resultBox.style.display = 'block';
+      resultBox.innerHTML = `
+        <div style="color:var(--mint);font-weight:600;margin-bottom:6px;">Model Response (${escapeHtml(data.model)}):</div>
+        <div style="color:#e6edf3;white-space:pre-wrap;">${escapeHtml(data.text)}</div>
+      `;
+      toast('Gemini test succeeded!');
+    } catch (err) {
+      statusPill.textContent = 'Failed';
+      statusPill.style.color = '#ff6b6b';
+      resultBox.style.display = 'block';
+      resultBox.innerHTML = `
+        <div style="color:#ff6b6b;font-weight:600;margin-bottom:4px;">Error:</div>
+        <div style="color:#c9d1d9;">${escapeHtml(err.message)}</div>
+      `;
+      toast(`Gemini test failed: ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      loading.style.display = 'none';
+    }
+  }
+
+  // Run initial setup
+  init();
+</script>
+</body>
+</html>

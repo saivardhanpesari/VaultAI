@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="VaultAI secure multi-tenant AI chatbot platform for companies.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<title>VaultAI — Private AI for Every Company</title>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/landing.css">
+</head>
+<body>
+<div class="animated-bg" aria-hidden="true"><canvas id="space-mesh" class="space-mesh"></canvas></div>
+
+<header class="wrap nav">
+  <a class="brand" href="/"><span class="mark">V</span> VaultAI</a>
+  <nav class="navlinks">
+    <a href="#features">Features</a>
+    <a href="#security">Security</a>
+    <a href="#workflow">How it works</a>
+    <a href="/auth.html" class="btn secondary">Sign in</a>
+    <a href="/auth.html?mode=signup" class="btn primary">Get Started</a>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="wrap hero">
+    <div>
+      <div class="eyebrow">Private AI for business</div>
+      <h1>Turn your company's documents into<br><span class="gradient">knowledge your team can actually use.</span></h1>
+      <p class="lead">A secure, multi-tenant AI workspace that helps teams chat with company documents—without mixing data between organizations.</p>
+      
+      <div class="actions">
+        <a class="btn primary" href="/auth.html?mode=signup">Get Started</a>
+        <a class="btn secondary" href="#workflow">See How It Works</a>
+      </div>
+      
+      <div class="trust">
+        <span>Tenant-level isolation</span>
+        <span>Role-based access</span>
+        <span>Activity logs</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap" id="features">
+    <div class="heading">
+      <div class="eyebrow">Core capabilities</div>
+      <h2 style="font-size:35px">PRIVATE AI. BUILT FOR EVERY BUSINESS.</h2>
+      <p>Separate company workspaces, document-grounded answers, and visibility for administrators.</p>
+    </div>
+    <div class="grid">
+      <article class="feature">
+        <div class="ico">♙</div>
+        <h3>Tenant login</h3>
+        <p>Authenticate users and assign them to a company workspace with role-based permissions.</p>
+      </article>
+      <article class="feature">
+        <div class="ico">▤</div>
+        <h3>Private document library</h3>
+        <p>Upload supported files and index them under the correct tenant for controlled retrieval.</p>
+      </article>
+      <article class="feature">
+        <div class="ico">✦</div>
+        <h3>AI chat with sources</h3>
+        <p>Answer questions from authorized company content and show references where available.</p>
+      </article>
+      <article class="feature">
+        <div class="ico">⚙</div>
+        <h3>Admin panel</h3>
+        <p>Manage organizations, user access, workspace settings, and platform health.</p>
+      </article>
+      <article class="feature">
+        <div class="ico">◷</div>
+        <h3>Usage & audit logs</h3>
+        <p>Review sign-ins, uploads, requests, and errors for monitoring and troubleshooting.</p>
+      </article>
+      <article class="feature">
+        <div class="ico">◈</div>
+        <h3>Business Use Cases</h3>
+        <p>Empower your company with continuous administrative workflow support, financial audits, and policy lookup.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section wrap" id="workflow">
+    <div class="heading">
+      <div class="eyebrow">Simple workflow</div>
+      <h2>From documents to useful answers</h2>
+      <p>A straightforward employee experience with controls behind the scenes.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">STEP 01</div>
+        <h3>Sign in securely</h3>
+        <p>Verify identity and resolve the user's company and role.</p>
+      </div>
+      <div class="step">
+        <div class="num">STEP 02</div>
+        <h3>Upload knowledge</h3>
+        <p>Store, process, and index documents within that tenant.</p>
+      </div>
+      <div class="step">
+        <div class="num">STEP 03</div>
+        <h3>Ask the AI</h3>
+        <p>Retrieve only authorized context and generate an answer.</p>
+      </div>
+      <div class="step">
+        <div class="num">STEP 04</div>
+        <h3>Monitor activity</h3>
+        <p>Review usage, errors, and security-relevant events.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap" id="security">
+    <div class="security">
+      <div>
+        <div class="eyebrow">Security by design</div>
+        <h2>Your customers share a platform—not their data.</h2>
+        <p>Tenant isolation must be enforced by the server, database queries, file storage, and AI retrieval pipeline. A separate-looking interface alone is not enough.</p>
+        <a class="btn secondary" href="/auth.html">See demo workspace →</a>
+      </div>
+      <div class="checks">
+        <div class="check"><b>✓ Tenant scoping</b>Every request checks organization access.</div>
+        <div class="check"><b>✓ Least privilege</b>Employees and admins get different permissions.</div>
+        <div class="check"><b>✓ Private files</b>Files are not publicly accessible by default.</div>
+        <div class="check"><b>✓ Audit trail</b>Record important actions without logging secrets.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap" id="faq">
+    <div class="heading">
+      <div class="eyebrow">Got questions?</div>
+      <h2>Frequently Asked Questions</h2>
+    </div>
+    <div class="faq">
+      <div class="faq-item">
+        <h3>How secure is VaultAI? <span>+</span></h3>
+        <p>VaultAI is built with strict multi-tenancy and data isolation. Your documents are stored securely and never used to train generalized models without your consent. (Backend implementation pending).</p>
+      </div>
+      <div class="faq-item">
+        <h3>What file types are supported? <span>+</span></h3>
+        <p>We support standard business formats including PDF, DOCX, and TXT files for knowledge extraction and querying.</p>
+      </div>
+      <div class="faq-item">
+        <h3>Do you hallucinate answers? <span>+</span></h3>
+        <p>Our system uses Retrieval-Augmented Generation (RAG) to ground answers in your uploaded documents and provides clear source citations so you can verify the information.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="cta">
+      <div>
+        <h2>Give every team its own AI workspace.</h2>
+        <p>Explore a front-end demo of the multi-tenant experience.</p>
+      </div>
+      <a class="btn" href="/auth.html">Launch demo workspace ↗</a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap footer">
+  <span>&copy; 2026 VaultAI. All rights reserved.</span>
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+  </div>
+</footer>
+
+<script>
+  // Simple FAQ accordion
+  document.querySelectorAll('.faq-item h3').forEach(item => {
+    item.addEventListener('click', () => {
+      const parent = item.parentElement;
+      const isActive = parent.classList.contains('active');
+      document.querySelectorAll('.faq-item').forEach(faq => faq.classList.remove('active'));
+      if (!isActive) {
+        parent.classList.add('active');
+        item.querySelector('span').textContent = '-';
+      } else {
+        item.querySelector('span').textContent = '+';
+      }
+      document.querySelectorAll('.faq-item:not(.active) h3 span').forEach(span => span.textContent = '+');
+    });
+  });
+</script>
+<script src="/space-mesh.js" defer></script>
+</body>
+</html>

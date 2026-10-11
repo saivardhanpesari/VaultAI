@@ -1,0 +1,54 @@
+/* Auth specific styles */
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  z-index: 10;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  background: #111b2e;
+  border: 1px solid #344762;
+  border-radius: 19px;
+  padding: 35px 30px;
+  position: relative;
+  box-shadow: 0 24px 70px #0006;
+}
+
+.auth-card h2 {
+  margin: 20px 0 8px;
+  font-size: 24px;
+}
+
+.auth-card p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.auth-links {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.auth-links a {
+  color: var(--mint);
+  text-decoration: none;
+}
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+/* Sections for toggling via JS in a single auth page or separate pages */
+.auth-section {
+  display: none;
+}
+.auth-section.active {
+  display: block;
+}

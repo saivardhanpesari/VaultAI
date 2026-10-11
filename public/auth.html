@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VaultAI — Authentication</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+<div class="animated-bg" aria-hidden="true"><canvas id="space-mesh" class="space-mesh"></canvas></div>
+
+<div class="auth-container">
+  <!-- Sign In Section -->
+  <div class="auth-card auth-section active" id="signin-section">
+    <div class="brand"><span class="mark">V</span> VaultAI</div>
+    <h2>Sign in to your workspace</h2>
+    <p id="signin-msg">Enter your credentials to access your secure workspace.</p>
+    
+    <form id="signin-form">
+      <label class="field">
+        <span>Email address</span>
+        <input id="signin-email" type="email" placeholder="you@company.com" required>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input id="signin-password" type="password" autocomplete="off" required>
+      </label>
+      
+      <button id="signin-btn" class="btn primary" style="width:100%;margin-top:8px">Sign In →</button>
+    </form>
+    
+    <div class="auth-links">
+      <a href="#" onclick="switchAuth('signup')">Create an account</a> | 
+      <a href="#" onclick="switchAuth('forgot')">Forgot password?</a>
+    </div>
+  </div>
+
+  <!-- Create Account Section -->
+  <div class="auth-card auth-section" id="signup-section">
+    <div class="brand"><span class="mark">V</span> VaultAI</div>
+    <h2>Create your workspace</h2>
+    <p id="signup-msg">Set up a new organization.</p>
+    
+    <form id="signup-form">
+      <label class="field">
+        <span>Workspace Name</span>
+        <input id="signup-company" type="text" placeholder="e.g. Acme Studio" required>
+      </label>
+      <label class="field">
+        <span>Your Name</span>
+        <input id="signup-name" type="text" placeholder="Jane Doe" required>
+      </label>
+      <label class="field">
+        <span>Email address</span>
+        <input id="signup-email" type="email" placeholder="you@company.com" required>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input id="signup-password" type="password" autocomplete="off" required>
+      </label>
+      
+      <button id="signup-btn" class="btn primary" style="width:100%;margin-top:8px">Create Account →</button>
+    </form>
+    
+    <div class="auth-links">
+      Already have an account? <a href="#" onclick="switchAuth('signin')">Sign In</a>
+    </div>
+  </div>
+
+  <!-- Forgot Password Section -->
+  <div class="auth-card auth-section" id="forgot-section">
+    <div class="brand"><span class="mark">V</span> VaultAI</div>
+    <h2>Reset Password</h2>
+    <p id="forgot-msg">Enter your email to receive a password reset link.</p>
+    
+    <form id="forgot-form">
+      <label class="field">
+        <span>Email address</span>
+        <input id="forgot-email" type="email" placeholder="you@company.com" required>
+      </label>
+      
+      <button id="forgot-btn" class="btn primary" style="width:100%;margin-top:8px">Send Reset Link →</button>
+    </form>
+    
+    <div class="auth-links">
+      Remember your password? <a href="#" onclick="switchAuth('signin')">Sign In</a>
+    </div>
+  </div>
+</div>
+
+<script src="/space-mesh.js" defer></script>
+<!-- Load Supabase JS from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  let supabaseClient = null;
+
+  async function initSupabase() {
+    try {
+      const res = await fetch('/api/config');
+      const config = await res.json();
+      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+        console.error("Missing Supabase configuration.");
+        showError("signin-msg", "Missing Supabase URL or Anon Key in environment variables.");
+        return;
+      }
+      supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+      
+      // Check if user is already logged in
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        window.location.href = '/dashboard.html';
+      }
+    } catch (e) {
+      console.error("Error initializing Supabase:", e);
+      showError("signin-msg", "Could not initialize authentication service.");
+    }
+  }
+
+  initSupabase();
+
+  function switchAuth(mode) {
+    document.querySelectorAll('.auth-section').forEach(el => el.classList.remove('active'));
+    document.getElementById(`${mode}-section`).classList.add('active');
+    
+    // Reset messages
+    document.getElementById('signin-msg').textContent = "Enter your credentials to access your secure workspace.";
+    document.getElementById('signin-msg').style.color = "var(--muted)";
+    document.getElementById('signup-msg').textContent = "Set up a new organization.";
+    document.getElementById('signup-msg').style.color = "var(--muted)";
+    document.getElementById('forgot-msg').textContent = "Enter your email to receive a password reset link.";
+    document.getElementById('forgot-msg').style.color = "var(--muted)";
+
+    const url = new URL(window.location);
+    if(mode === 'signin') {
+      url.searchParams.delete('mode');
+    } else {
+      url.searchParams.set('mode', mode);
+    }
+    window.history.replaceState({}, '', url);
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const mode = urlParams.get('mode');
+  if (mode === 'signup' || mode === 'forgot') {
+    switchAuth(mode);
+  }
+
+  function showError(elementId, message) {
+    const el = document.getElementById(elementId);
+    el.textContent = message;
+    el.style.color = "#ff6b6b";
+  }
+
+  function showSuccess(elementId, message) {
+    const el = document.getElementById(elementId);
+    el.textContent = message;
+    el.style.color = "var(--mint)";
+  }
+
+  // Handle Sign In
+  document.getElementById('signin-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!supabaseClient) return;
+    
+    const email = document.getElementById('signin-email').value;
+    const password = document.getElementById('signin-password').value;
+    const btn = document.getElementById('signin-btn');
+    
+    btn.textContent = "Signing In...";
+    btn.disabled = true;
+    
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+      showError("signin-msg", error.message);
+      btn.textContent = "Sign In →";
+      btn.disabled = false;
+    } else {
+      showSuccess("signin-msg", "Success! Redirecting...");
+      window.location.href = '/dashboard.html';
+    }
+  });
+
+  // Handle Sign Up
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!supabaseClient) return;
+    
+    const company = document.getElementById('signup-company').value;
+    const fullName = document.getElementById('signup-name').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const btn = document.getElementById('signup-btn');
+    
+    btn.textContent = "Creating Account...";
+    btn.disabled = true;
+    
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          company: company,
+          role: 'Admin'
+        }
+      }
+    });
+    
+    if (error) {
+      showError("signup-msg", error.message);
+      btn.textContent = "Create Account →";
+      btn.disabled = false;
+    } else {
+      showSuccess("signup-msg", "Account created successfully! Check your email to verify (if enabled) or sign in.");
+      // Optional: switch to sign in
+      setTimeout(() => {
+        document.getElementById('signin-email').value = email;
+        switchAuth('signin');
+      }, 3000);
+    }
+  });
+
+  // Handle Forgot Password
+  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!supabaseClient) return;
+    
+    const email = document.getElementById('forgot-email').value;
+    const btn = document.getElementById('forgot-btn');
+    
+    btn.textContent = "Sending...";
+    btn.disabled = true;
+    
+    const { data, error } = await supabaseClient.auth.resetPasswordForEmail(email);
+    
+    if (error) {
+      showError("forgot-msg", error.message);
+    } else {
+      showSuccess("forgot-msg", "Password reset link sent! Please check your email.");
+    }
+    
+    btn.textContent = "Send Reset Link →";
+    btn.disabled = false;
+  });
+</script>
+</body>
+</html>
